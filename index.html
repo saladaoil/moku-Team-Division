@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="チーム分け">
+    <title>ビーチバレー チーム分け</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <a href="register.html" class="nav-btn">メンバー登録へ</a>
+    
+    <h1>チーム分け</h1>
+    
+    <div class="counter-badge">
+        参加人数：<span id="activeCount" class="count-num">0</span> 名
+    </div>
+
+    <div style="margin-bottom:20px; text-align:center; background:#fff; padding:10px; border-radius:8px;">
+        <label style="font-weight:bold; margin-right:10px;">チーム数：</label>
+        <select id="teamCountInput" style="padding:10px; font-size:1.1rem; border-radius:8px; border:1px solid #ddd; width:100px; text-align:center; accent-color: var(--primary-purple);">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+        </select>
+    </div>
+    
+    <div id="selectionList" style="margin-bottom:20px; border-top:1px solid #eee; max-height: 300px; overflow-y: auto;"></div>
+    
+    <button class="btn-purple" style="width:100%; font-size:1.2rem; padding:15px;" onclick="generateTeams()">チームを分ける</button>
+    <div id="resultArea" class="team-grid"></div>
+</div>
+
+<script>
+    let masterPlayers = JSON.parse(localStorage.getItem('vb_purple_list')) || [];
+
+    function updateActiveCount() {
+        const checkedCount = document.querySelectorAll('input[name="present"]:checked').length;
+        document.getElementById('activeCount').innerText = checkedCount;
+    }
+
+    function renderSelectionList() {
+        const list = document.getElementById('selectionList');
+        if(masterPlayers.length === 0) {
+            list.innerHTML = '<p style="color:#999; text-align:center; padding:20px;">名簿に登録がありません。</p>';
+            return;
+        }
+        list.innerHTML = '';
+        masterPlayers.forEach(p => {
+            list.innerHTML += `
+                <label class="list-item">
+                    <span>${p.gender === "1" ? "🔵" : "🟠"} ${p.name}</span>
+                    <input type="checkbox" name="present" value="${p.id}" checked onchange="updateActiveCount()" style="transform:scale(1.5); accent-color: var(--primary-purple);">
+                </label>`;
+        });
+        updateActiveCount();
+    }
+
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    function generateTeams() {
+        const checkedIds = Array.from(document.querySelectorAll('input[name="present"]:checked')).map(el => parseInt(el.value));
+        const selectedPlayers = masterPlayers.filter(p => checkedIds.includes(p.id));
+        const teamCount = parseInt(document.getElementById('teamCountInput').value);
+
+        if(selectedPlayers.length < teamCount) return alert("人数が不足しています");
+
+        const group1 = shuffle(selectedPlayers.filter(p => p.gender === "1"));
+        const group2 = shuffle(selectedPlayers.filter(p => p.gender === "2"));
+        const allSorted = [...group1, ...group2];
+        const teams = Array.from({ length: teamCount }, (_, i) => ({ id: i + 1, members: [] }));
+
+        allSorted.forEach((player, index) => {
+            teams[index % teamCount].members.push(player);
+        });
+
+        const area = document.getElementById('resultArea');
+        area.innerHTML = '';
+        teams.forEach(t => {
+            const memberHtml = t.members.map(m => `<div>${m.gender === '1' ? '🔵':'🟠'} ${m.name}</div>`).join('');
+            area.innerHTML += `
+                <div class="team-card">
+                    <div class="team-title">チーム ${t.id}</div>
+                    ${memberHtml}
+                </div>`;
+        });
+        area.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    renderSelectionList();
+</script>
+</body>
+</html>

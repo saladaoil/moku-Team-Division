@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="チーム分け">
+    <title>メンバー登録</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <a href="index.html" class="nav-btn">チーム分け画面へ</a>
+    
+    <h1>メンバーの登録・管理</h1>
+    
+    <div class="input-group">
+        <input type="text" id="newName" placeholder="名前を入力">
+        <label class="check-label">
+            <input type="checkbox" id="isMaleCheck" style="transform:scale(1.5); accent-color: var(--primary-purple);"> 男性
+        </label>
+        <button class="btn-purple" onclick="addMember()">メンバーに追加する</button>
+    </div>
+
+    <div id="masterList" style="max-height: 400px; overflow-y: auto;"></div>
+</div>
+
+<script>
+    let masterPlayers = JSON.parse(localStorage.getItem('vb_purple_list')) || [];
+
+    function addMember() {
+        const nameInput = document.getElementById('newName');
+        const isMale = document.getElementById('isMaleCheck').checked;
+        if(!nameInput.value) return;
+
+        masterPlayers.push({ id: Date.now(), name: nameInput.value, gender: isMale ? "1" : "2" });
+        nameInput.value = '';
+        document.getElementById('isMaleCheck').checked = false;
+        saveData();
+        renderMasterList();
+    }
+
+    function deleteMember(id) {
+        if(!confirm("削除しますか？")) return;
+        masterPlayers = masterPlayers.filter(p => p.id !== id);
+        saveData();
+        renderMasterList();
+    }
+
+    function renderMasterList() {
+        const list = document.getElementById('masterList');
+        list.innerHTML = `<strong>名簿一覧 (${masterPlayers.length}人):</strong>`;
+        masterPlayers.forEach(p => {
+            const genderMark = p.gender === "1" ? "🔵" : "🟠";
+            list.innerHTML += `
+                <div class="list-item">
+                    <span>${genderMark} ${p.name}</span>
+                    <button onclick="deleteMember(${p.id})" style="color:var(--danger); border:none; background:none; cursor:pointer; font-weight:bold;">削除</button>
+                </div>`;
+            });
+    }
+
+    function saveData() {
+        localStorage.setItem('vb_purple_list', JSON.stringify(masterPlayers));
+    }
+
+    renderMasterList();
+</script>
+</body>
+</html>
